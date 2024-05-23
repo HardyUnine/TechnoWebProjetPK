@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hearing Test</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 60vh;
+    text-align: center;
+        }
+        .btn {
+            margin: 0.5rem;
+        }
+        .button-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="/">Music Practice</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="/hearing_test">Hearing Test</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/bpm_test">BPM Test</a>
+                </li>
+                <!-- Add more navigation links here -->
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1 class="mt-5">Hearing Test <span id="speaker-icon"></span></h1>
+            <div class="btn-group mt-3" role="group" aria-label="Difficulty levels">
+            <button onclick="setDifficulty('easy')" class="btn btn-success">Easy</button>
+            <button onclick="setDifficulty('medium')" class="btn btn-warning">Medium</button>
+            <button onclick="setDifficulty('hard')" class="btn btn-danger">Hard</button>
+        </div>
+        <button onclick="startTest()" class="btn btn-primary btn-lg mt-3">Start Test</button>
+        <div class="button-container">
+            <button onclick="guess('higher')" class="btn btn-secondary btn-lg">Higher</button>
+            <button onclick="guess('lower')" class="btn btn-secondary btn-lg">Lower</button>
+            <button id="sameFrequencyButton" onclick="checkSameFrequency()" class="btn btn-secondary btn-lg">Same Frequency</button>
+        </div>
+        <p id="result"></p>
+        <p>Correct guesses: <span id="correctCount">0</span></p>
+        <p>Incorrect guesses: <span id="incorrectCount">0</span></p>
+    </div>
+    <footer class="footer mt-auto py-3 bg-light">
+        <div class="container">
+            <span class="text-muted">© 2022 Music Practice. All rights reserved.</span>
+        </div>
+    </footer>
+    <!-- Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+    <!-- Your JavaScript function -->
+    <script>
+        window.onload = function() {
+    alert("Welcome to the Hearing Test! Here are the rules:\n\n1. You will hear two notes.\n2. Your task is to determine whether the second note was the same or different.\n3. Click the 'Same frequency' button if you think the second note was the same, or the 'Higher' or 'Lower' button if you think it was different.\n4. Your score will be updated based on your guess.\n\nGood luck!");
+};
+        var context = new (window.AudioContext || window.webkitAudioContext)();
+        //var notes = [130.81, 138.59, 146.83, 155.56, 164.81, 174.61, 185.00, 196.00, 207.65, 220.00, 233.08, 246.94, 261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88, 523.25, 554.37, 587.33, 622.25, 659.25, 698.46, 739.99, 783.99, 830.61, 880.00, 932.33, 987.77, 1046.50, 1108.73, 1174.66, 1244.51, 1318.51, 1396.91, 1479.98, 1567.98, 1661.22, 1760.00, 1864.66, 1975.53, 2093.00];
+        var firstNoteIndex;
+        var secondNoteIndex;
+        var difficulty;
+        var guessMade = false;
+        var correctCount = 0;
+        var incorrectCount = 0; 
+    
+        function setDifficulty(diff) {
+            difficulty = diff;
+            // Update the title
+            var title = document.querySelector('h1');
+            title.textContent = 'Hearing Test - ' + diff.charAt(0).toUpperCase() + diff.slice(1);
+        }
+    
+        var firstNoteFrequency;
+        var secondNoteFrequency;
+
+        function startTest() {
+            guessMade = false;
+            firstNoteFrequency = 200 + Math.random() * 1400; // random frequency between 200Hz and 1600Hz
+            playSound(firstNoteFrequency);
+            setTimeout(function() {
+                var diff;
+                if (difficulty === 'easy') {
+                    diff = 50; // frequency difference in Hz
+                } else if (difficulty === 'medium') {
+                    diff = 25; // frequency difference in Hz
+                } else { // hard
+                    diff = 10; // frequency difference in Hz
+                }
+                secondNoteFrequency = Math.random() > 0.5 ? firstNoteFrequency + diff : firstNoteFrequency - diff;
+                playSound(secondNoteFrequency);
+            }, 3000);
+        }
+
+        function playSound(frequency) {
+            var oscillator = context.createOscillator();
+            oscillator.frequency.value = frequency; // frequency in Hz
+            oscillator.connect(context.destination);
+            oscillator.start();
+            setTimeout(function() {
+                oscillator.stop();
+            }, 1000); // stop after 1 second
+        }
+
+        function guess(direction) {
+            if (!guessMade && secondNoteFrequency !== undefined) {
+                guessMade = true;
+                var result;
+                if ((direction === 'higher' && secondNoteFrequency > firstNoteFrequency) || 
+                    (direction === 'lower' && secondNoteFrequency < firstNoteFrequency)) {
+                    result = 'Correct!';
+                    correctCount++;
+                } else {
+                    result = 'Incorrect.';
+                    incorrectCount++;
+                }
+                document.getElementById('result').textContent = result;
+                updateScore();
+            }
+        }
+
+        function checkSameFrequency() {
+            if (guessMade) return; // if a guess has already been made, do nothing
+            guessMade = true;
+            if (firstNoteFrequency === secondNoteFrequency) {
+                alert("Correct! The two notes were the same frequency.");
+                correctCount++;
+            } else {
+                alert("Incorrect. The two notes were different frequencies.");
+                incorrectCount++;
+            }
+            updateScore();
+        }
+
+        function updateScore() {
+            document.getElementById('correctCount').textContent = correctCount;
+            document.getElementById('incorrectCount').textContent = incorrectCount;
+        }
+    </script>
+</body>
+</html>
